@@ -1,0 +1,429 @@
+#include "dialog.h"
+#include "ui_dialog.h"
+#include "mode.h"
+#include <QDebug>
+#include <QSettings>
+#include <QColorDialog>
+#include <QSignalMapper>
+#include <QMetaEnum>
+
+struct DialogData
+{
+    QHash<quint16,QRadioButton *>   mapPosition ;
+    QHash<quint16,QRadioButton *>   mapShape ;
+    QHash<quint16,QRadioButton *>   mapDirection ;
+    QHash<quint8, QDoubleSpinBox *> mapTime;
+    QHash<quint8, QPushButton *>    mapColor;
+
+    // Above hashes will contain pointers to the specific Buttons identified
+    // by the keys which will consist of unique combination of modes and above details
+    // this is done so that the GUI items can be referred to by their modes and details
+    // instead of referring them by their name,
+    // we refer by enums to decrease hardcoding and increase scalability
+
+    QHash<quint8,QColor> colorMap;
+    QColorDialog *colord;
+    QSignalMapper *mapper;
+    quint8 currColorToSet = 0;
+    QHash<quint8,QPointF> userScaling;
+
+    QHash<quint8,quint8> stateDirection;
+    QHash<quint8,quint8> stateShape;
+    QHash<quint8,quint8> statePosition;
+    QHash<quint8,QColor> stateColor;
+};
+
+Dialog::Dialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::Dialog)
+{
+    ui->setupUi(this);
+    dptr = new DialogData;
+    connect(ui->buttonSave,SIGNAL(released()), this, SLOT(on_SaveClicked()));
+    connect(ui->buttonReset,SIGNAL(released()), this, SLOT(on_ResetClicked()));
+    connect(ui->buttonDiscard,SIGNAL(released()), this, SLOT(on_DiscardClicked()));
+    setHashMapping();
+    loadSavedSettings();
+
+    dptr->colord = new QColorDialog(this);
+    dptr->colord->setOption(QColorDialog::DontUseNativeDialog);
+    dptr->colord->setOption(QColorDialog::ShowAlphaChannel);
+    dptr->mapper = new QSignalMapper(this);
+
+    dptr->mapper->setMapping(dptr->mapColor[Modes::Inhale], (int)Modes::Inhale);
+    connect(dptr->mapColor[Modes::Inhale],SIGNAL(released()),dptr->mapper,SLOT(map()));
+
+    dptr->mapper->setMapping(dptr->mapColor[Modes::Exhale], (int)Modes::Exhale);
+    connect(dptr->mapColor[Modes::Exhale],SIGNAL(released()),dptr->mapper,SLOT(map()));
+
+    dptr->mapper->setMapping(dptr->mapColor[Modes::HoldIn], (int)Modes::HoldIn);
+    connect(dptr->mapColor[Modes::HoldIn],SIGNAL(released()),dptr->mapper,SLOT(map()));
+
+    dptr->mapper->setMapping(dptr->mapColor[Modes::HoldOut], (int)Modes::HoldOut);
+    connect(dptr->mapColor[Modes::HoldOut],SIGNAL(released()),dptr->mapper,SLOT(map()));
+
+    connect(dptr->mapper,SIGNAL(mapped(int)),this,SLOT(on_ColorSelectClicked(int)) );
+
+
+    connect(dptr->colord,SIGNAL(colorSelected(QColor)),this,SLOT(on_ColorSelected(QColor)));
+    connect(dptr->colord,SIGNAL(currentColorChanged(QColor)),this,SLOT(on_ColorSelected(QColor)));
+
+    for (QRadioButton * instance : dptr->mapPosition.values() + dptr->mapDirection.values() + dptr->mapShape.values())
+        connect(instance,SIGNAL(toggled(bool)),this,SLOT(on_SomethingToggled()));
+
+}
+
+Dialog::~Dialog()
+{
+    delete ui;
+}
+
+void Dialog::setHashMapping()
+{
+    // Here once you set the Hash mapping with the ui objects, you never refer to them by their ui name
+    // and always refer by the enums
+    dptr->mapPosition[Modes::Inhale << 8 | Position::TopLeft]     = ui->InhtopLeft;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::Top]         = ui->InhtopCentre;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::TopRight]    = ui->InhtopRight;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::Left]        = ui->InhcentreLeft;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::Centred]     = ui->Inhcentre;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::Right]       = ui->InhcentreRight;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::BottomLeft]  = ui->InhbottomLeft;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::Bottom]      = ui->InhbottomCentre;
+    dptr->mapPosition[Modes::Inhale << 8 | Position::BottomRight] = ui->InhbottomRight;
+
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::TopLeft]     = ui->HoldtopLeft;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::Top]         = ui->HoldtopCentre;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::TopRight]    = ui->HoldtopRight;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::Left]        = ui->HoldcentreLeft;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::Centred]     = ui->Holdcentre;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::Right]       = ui->HoldcentreRight;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::BottomLeft]  = ui->HoldbottomLeft;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::Bottom]      = ui->HoldbottomCentre;
+    dptr->mapPosition[Modes::HoldIn << 8 | Position::BottomRight] = ui->HoldbottomRight;
+
+
+    dptr->mapShape[Modes::HoldIn << 8 | Shape::Ellipse]          = ui->HoldEllipse;
+    dptr->mapShape[Modes::HoldIn << 8 | Shape::Rectangle]        = ui->HoldRectangle;
+    dptr->mapShape[Modes::HoldIn << 8 | Shape::RoundedRectangle] = ui->HoldRoundedRect;
+
+    dptr->mapShape[Modes::Inhale << 8 | Shape::Ellipse]          = ui->InhEllipse;
+    dptr->mapShape[Modes::Inhale << 8 | Shape::Rectangle]        = ui->InhRectangle;
+    dptr->mapShape[Modes::Inhale << 8 | Shape::RoundedRectangle] = ui->InhRoundedRect;
+
+
+    dptr->mapDirection[Modes::Inhale << 8 | Direction::Horizontal] = ui->InhOnlyHorizontal;
+    dptr->mapDirection[Modes::Inhale << 8 | Direction::Vertical]   = ui->InhOnlyVertical;
+    dptr->mapDirection[Modes::Inhale << 8 | Direction::Both]       = ui->InhBothChangable;
+
+    dptr->mapDirection[Modes::HoldIn << 8 | Direction::Horizontal] = ui->HoldOnlyHorizontal;
+    dptr->mapDirection[Modes::HoldIn << 8 | Direction::Vertical]   = ui->HoldOnlyVertical;
+    dptr->mapDirection[Modes::HoldIn << 8 | Direction::Both]       = ui->HoldBothChangable;
+
+    dptr->mapTime[Modes::Inhale]  = ui->timeInhale;
+    dptr->mapTime[Modes::Exhale]  = ui->timeExhale;
+    dptr->mapTime[Modes::HoldIn]  = ui->timeHoldIn;
+    dptr->mapTime[Modes::HoldOut] = ui->timeHoldOut;
+
+    dptr->mapColor[Modes::Inhale] = ui->colorSetInhale;
+    dptr->mapColor[Modes::Exhale] = ui->colorSetExhale;
+    dptr->mapColor[Modes::HoldIn] = ui->colorSetHoldIn;
+    dptr->mapColor[Modes::HoldOut]= ui->colorSetHoldOut;
+}
+
+
+void Dialog::setRadioButton(QRadioButton *instance)
+{
+    if (!instance) return ;
+    #if __cplusplus >= 201703L
+        std::invoke(&QRadioButton::setChecked, instance ,true);
+    #else
+        instance->setChecked(true);
+    #endif
+}
+
+bool Dialog::getRadioButtonState(QRadioButton *instance) const
+{
+    if (!instance) return false;
+    #if __cplusplus >= 201703L
+        return std::invoke(&QRadioButton::isChecked, instance );
+    #else
+        return instance->isChecked();
+    #endif
+}
+
+void Dialog::loadSavedSettings()
+{
+    qInfo() << Q_FUNC_INFO;
+    QSettings settings(QString(qApp->applicationName()));
+
+    settings.beginGroup("InhaleExhale");
+    setRadioButton(dptr->mapPosition[Modes::Inhale << 8 | settings.value("Position",Position::TopLeft).toInt()]);
+    setRadioButton(dptr->mapShape[Modes::Inhale << 8 | settings.value("Shape",Shape::Ellipse).toInt()]);
+    setRadioButton(dptr->mapDirection[Modes::Inhale << 8 | settings.value("Direction",Direction::Horizontal).toInt()]);
+    dptr->mapTime.value(Modes::Inhale)->setValue(settings.value("timeInh", 0).toFloat()/1000);
+    dptr->mapTime.value(Modes::Exhale)->setValue(settings.value("timeExh", 0).toFloat()/1000);
+    on_ColorSelected(Modes::Inhale, QColor(settings.value("colorInh", "#ff00ff").toString()));
+    on_ColorSelected(Modes::Exhale, QColor(settings.value("colorExh", "#ffff00").toString()));
+    QStringList point = settings.value("scalingInh","1,1").toString().split(",");
+    dptr->userScaling[Modes::Inhale] = (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1);
+    point = settings.value("scalingExh","1,1").toString().split(",");
+    dptr->userScaling[Modes::Exhale] = (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1);
+    settings.endGroup();
+
+    settings.beginGroup("HoldInOut");
+    setRadioButton(dptr->mapPosition[Modes::HoldIn << 8 | settings.value("Position",Position::TopLeft).toInt()]);
+    setRadioButton(dptr->mapShape[Modes::HoldIn << 8 | settings.value("Shape",Shape::Ellipse).toInt()]);
+    setRadioButton(dptr->mapDirection[Modes::HoldIn << 8 | settings.value("Direction",Direction::Vertical).toInt()]);
+    dptr->mapTime.value(Modes::HoldIn)->setValue(settings.value("timeHoldIn", 0).toFloat()/1000);
+    dptr->mapTime.value(Modes::HoldOut)->setValue(settings.value("timeHoldOut", 0).toFloat()/1000);
+
+    on_ColorSelected(Modes::HoldIn, QColor(settings.value("colorHoldIn", "#00ffff").toString()));
+    on_ColorSelected(Modes::HoldOut, QColor(settings.value("colorHoldOut", "#00ff00").toString()));
+    point = settings.value("scalingHoldIn","1,1").toString().split(",");
+    dptr->userScaling[Modes::HoldIn] = (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1);
+    point = settings.value("scalingHoldOut","1,1").toString().split(",");
+    dptr->userScaling[Modes::HoldOut] = (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1);
+    settings.endGroup();
+
+    dptr->stateDirection[Modes::Inhale] = getDirection(Modes::Inhale);
+    dptr->stateDirection[Modes::HoldIn] = getDirection(Modes::HoldIn);
+    dptr->stateShape[Modes::Inhale]     = getShape(Modes::Inhale);
+    dptr->stateShape[Modes::HoldIn]     = getShape(Modes::HoldIn);
+    dptr->statePosition[Modes::Inhale]  = getPosition(Modes::Inhale);
+    dptr->statePosition[Modes::HoldIn]  = getPosition(Modes::HoldIn);
+
+    dptr->stateColor[Modes::Inhale]  = getColor(Modes::Inhale);
+    dptr->stateColor[Modes::Exhale]  = getColor(Modes::Exhale);
+    dptr->stateColor[Modes::HoldIn]  = getColor(Modes::HoldIn);
+    dptr->stateColor[Modes::HoldOut] = getColor(Modes::HoldOut);
+}
+
+void Dialog::saveSettings()
+{
+    qInfo() << Q_FUNC_INFO;
+    QSettings settings(QString(qApp->applicationName()));
+    settings.beginGroup("InhaleExhale");
+    settings.setValue("Position",getPosition(Modes::Inhale));
+    settings.setValue("Shape",getShape(Modes::Inhale));
+    settings.setValue("Direction",getDirection(Modes::Inhale));
+    settings.setValue("timeInh",getTimeMS(Modes::Inhale));
+    settings.setValue("timeExh",getTimeMS(Modes::Exhale));
+    settings.setValue("colorInh",getColor(Modes::Inhale).name());
+    settings.setValue("colorExh",getColor(Modes::Exhale).name());
+    settings.setValue("scalingInh",QString::number(dptr->userScaling[Modes::Inhale].x())+","+QString::number(dptr->userScaling[Modes::Inhale].y()));
+    settings.setValue("scalingExh",QString::number(dptr->userScaling[Modes::Exhale].x())+","+QString::number(dptr->userScaling[Modes::Exhale].y()));
+    settings.endGroup();
+
+    settings.beginGroup("HoldInOut");
+    settings.setValue("Position",getPosition(Modes::HoldIn));
+    settings.setValue("Shape",getShape(Modes::HoldIn));
+    settings.setValue("Direction",getDirection(Modes::HoldIn));
+    settings.setValue("timeHoldIn",getTimeMS(Modes::HoldIn));
+    settings.setValue("timeHoldOut",getTimeMS(Modes::HoldOut));
+    settings.setValue("colorHoldIn",getColor(Modes::HoldIn).name());
+    settings.setValue("colorHoldOut",getColor(Modes::HoldOut).name());
+    settings.setValue("scalingHoldIn",QString::number(dptr->userScaling[Modes::HoldIn].x())+","+QString::number(dptr->userScaling[Modes::HoldIn].y()));
+    settings.setValue("scalingHoldOut",QString::number(dptr->userScaling[Modes::HoldOut].x())+","+QString::number(dptr->userScaling[Modes::HoldOut].y()));
+    settings.endGroup();
+
+    dptr->stateDirection[Modes::Inhale] = getDirection(Modes::Inhale);
+    dptr->stateDirection[Modes::HoldIn] = getDirection(Modes::HoldIn);
+    dptr->stateShape[Modes::Inhale]     = getShape(Modes::Inhale);
+    dptr->stateShape[Modes::HoldIn]     = getShape(Modes::HoldIn);
+    dptr->statePosition[Modes::Inhale]  = getPosition(Modes::Inhale);
+    dptr->statePosition[Modes::HoldIn]  = getPosition(Modes::HoldIn);
+
+    dptr->stateColor[Modes::Inhale]  = getColor(Modes::Inhale);
+    dptr->stateColor[Modes::Exhale]  = getColor(Modes::Exhale);
+    dptr->stateColor[Modes::HoldIn]  = getColor(Modes::HoldIn);
+    dptr->stateColor[Modes::HoldOut] = getColor(Modes::HoldOut);
+}
+
+quint8 Dialog::getPosition(quint8 mode)
+{
+    if (mode == Modes::Exhale) mode = Modes::Inhale;
+    if (mode == Modes::HoldOut) mode = Modes::HoldIn;
+
+    for (quint16 keys : dptr->mapPosition.keys())
+        if ((keys >> 8) == mode && getRadioButtonState(dptr->mapPosition.value(keys)))
+            return (keys & 0xFF) ; // extract Position byte from the key
+
+    return 0;
+}
+quint8 Dialog::getShape(quint8 mode)
+{
+    if (mode == Modes::Exhale) mode = Modes::Inhale;
+    if (mode == Modes::HoldOut) mode = Modes::HoldIn;
+
+    for (quint16 keys : dptr->mapShape.keys())
+        if ((keys >> 8) == mode && getRadioButtonState(dptr->mapShape.value(keys)))
+            return (keys & 0xFF) ; // extract Shape byte from the key
+    return 0;
+}
+quint8 Dialog::getDirection(quint8 mode)
+{
+    if (mode == Modes::Exhale) mode = Modes::Inhale;
+    if (mode == Modes::HoldOut) mode = Modes::HoldIn;
+
+    for (quint16 keys : dptr->mapDirection.keys())
+        if ((keys >> 8) == mode && getRadioButtonState(dptr->mapDirection.value(keys)))
+            return (keys & 0xFF) ; // extract Direction byte from the key
+    return 0;
+}
+
+quint16 Dialog::getTimeMS(quint8 mode)
+{
+    if (dptr->mapTime.contains(mode))
+        return (quint16)(dptr->mapTime.value(mode)->value()*1000);
+    return 0;
+}
+
+QColor Dialog::getColor(quint8 mode)
+{
+    return dptr->colorMap[mode];
+}
+
+void Dialog::setUserScaling(quint8 mode, QPointF scaling)
+{
+    dptr->userScaling[mode] = scaling;
+}
+
+void Dialog::saveUserScaling()
+{
+    QSettings settings(QString(qApp->applicationName()));
+    settings.beginGroup("InhaleExhale");
+
+    settings.setValue("scalingInh",QString::number(dptr->userScaling[Modes::Inhale].x())+","+QString::number(dptr->userScaling[Modes::Inhale].y()));
+    settings.setValue("scalingExh",QString::number(dptr->userScaling[Modes::Exhale].x())+","+QString::number(dptr->userScaling[Modes::Exhale].y()));
+    settings.endGroup();
+
+    settings.beginGroup("HoldInOut");
+    settings.setValue("scalingHoldIn",QString::number(dptr->userScaling[Modes::HoldIn].x())+","+QString::number(dptr->userScaling[Modes::HoldIn].y()));
+    settings.setValue("scalingHoldOut",QString::number(dptr->userScaling[Modes::HoldOut].x())+","+QString::number(dptr->userScaling[Modes::HoldOut].y()));
+    settings.endGroup();
+}
+
+void Dialog::setPosition(quint8 mode, quint8 position)
+{
+    setRadioButton(dptr->mapPosition[mode << 8 | position]);
+}
+
+void Dialog::savePosition()
+{
+    qInfo() << Q_FUNC_INFO ;
+    QSettings settings(QString(qApp->applicationName()));
+    settings.beginGroup("InhaleExhale");
+
+    settings.setValue("Position",getPosition(Modes::Inhale));
+    settings.endGroup();
+
+    settings.beginGroup("HoldInOut");
+    settings.setValue("Position",getPosition(Modes::HoldIn));
+    settings.endGroup();
+}
+
+QPointF Dialog::getUserScaling(quint8 mode)
+{
+    return dptr->userScaling[mode];
+}
+
+void Dialog::on_ColorSelected(int mode)
+{
+    dptr->colorMap[mode] = dptr->colord->selectedColor();
+    if (mode == Modes::Inhale)
+    {
+        QColor coo = dptr->colorMap[Modes::Inhale];
+        QString cols = colStart.arg(colStyleSheet.arg(coo.red()).arg(coo.green()).arg(coo.blue()));
+    }
+    dptr->mapper->removeMappings(dptr->colord);
+}
+
+void Dialog::on_ColorSelected(QColor color)
+{
+
+    on_ColorSelected(dptr->currColorToSet, color);
+    this->show();
+}
+
+void Dialog::on_ColorSelected(quint8 mode, QColor color)
+{
+    dptr->colorMap[mode] = color;
+    QString cols = colStart.arg(colStyleSheet.arg(color.red()).arg(color.green()).arg(color.blue()));
+    dptr->mapColor.value(mode)->setStyleSheet(cols);
+    on_SomethingToggled();
+}
+
+void Dialog::on_ColorSelectClicked(int mode)
+{
+    dptr->currColorToSet = mode;
+    this->hide();
+    dptr->colord->open();
+}
+
+void Dialog::on_ColorInhaleClicked()
+{
+    dptr->mapper->setMapping(dptr->colord, (int)Modes::Inhale);
+    connect(dptr->colord,SIGNAL(colorSelected(QColor)),dptr->mapper,SLOT(map()));
+    connect(dptr->mapper,SIGNAL(mapped(int)),this,SLOT(on_ColorSelected(int)) );
+    dptr->colord->open();
+}
+
+void Dialog::revertSettings()
+{
+    setRadioButton(dptr->mapPosition[Modes::Inhale << 8 | dptr->statePosition[Modes::Inhale]]);
+    setRadioButton(dptr->mapShape[Modes::Inhale << 8 | dptr->stateShape[Modes::Inhale]]);
+    setRadioButton(dptr->mapDirection[Modes::Inhale << 8 | dptr->stateDirection[Modes::Inhale]]);
+
+    on_ColorSelected(Modes::Inhale, QColor(dptr->stateColor[Modes::Inhale]));
+    on_ColorSelected(Modes::Exhale, QColor(dptr->stateColor[Modes::Exhale]));
+
+
+    setRadioButton(dptr->mapPosition[Modes::HoldIn << 8 | dptr->statePosition[Modes::HoldIn]]);
+    setRadioButton(dptr->mapShape[Modes::HoldIn << 8 | dptr->stateShape[Modes::HoldIn]]);
+    setRadioButton(dptr->mapDirection[Modes::HoldIn << 8 | dptr->stateDirection[Modes::HoldIn]]);
+
+    on_ColorSelected(Modes::HoldIn, QColor(dptr->stateColor[Modes::HoldIn]));
+    on_ColorSelected(Modes::HoldOut, QColor(dptr->stateColor[Modes::HoldOut]));
+}
+
+void Dialog::on_ResetClicked()
+{
+    qInfo() << Q_FUNC_INFO;
+    setRadioButton(dptr->mapPosition[Modes::Inhale << 8 | Position::TopLeft]);
+    setRadioButton(dptr->mapPosition[Modes::HoldIn << 8 | Position::TopLeft]);
+
+    setRadioButton(dptr->mapShape[Modes::Inhale << 8 | Shape::Ellipse]);
+    setRadioButton(dptr->mapShape[Modes::HoldIn << 8 | Shape::Ellipse]);
+
+    setRadioButton(dptr->mapDirection[Modes::Inhale << 8 | Direction::Vertical ]);
+    setRadioButton(dptr->mapDirection[Modes::HoldIn << 8 | Direction::Horizontal]);
+
+    dptr->mapTime.value(Modes::Inhale)->setValue(3);
+    dptr->mapTime.value(Modes::Exhale)->setValue(3);
+    dptr->mapTime.value(Modes::HoldIn)->setValue(1.5);
+    dptr->mapTime.value(Modes::HoldOut)->setValue(1.5);
+}
+
+void Dialog::on_DiscardClicked()
+{
+    qInfo() << Q_FUNC_INFO;
+    revertSettings();
+    this->hide();
+    emit settingsChanged();
+    emit settingsClosed();
+}
+
+void Dialog::on_SomethingToggled()
+{
+    emit settingsChanged();
+}
+
+void Dialog::on_SaveClicked()
+{
+    qInfo() << Q_FUNC_INFO;
+    this->hide();
+    saveSettings();
+    emit settingsChanged();
+    emit settingsClosed();
+}
