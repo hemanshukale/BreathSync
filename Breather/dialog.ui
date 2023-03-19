@@ -948,6 +948,61 @@
      <number>1</number>
     </property>
    </widget>
+   <widget class="QLabel" name="label_SetTransparancyShape">
+    <property name="geometry">
+     <rect>
+      <x>368</x>
+      <y>220</y>
+      <width>151</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Shape Transparancy</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_SetTransparancyWindow">
+    <property name="geometry">
+     <rect>
+      <x>370</x>
+      <y>250</y>
+      <width>151</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Window Transparancy</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="transparancyWindow">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>246</y>
+      <width>44</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>set Window Transparancy %</string>
+    </property>
+    <property name="maximum">
+     <number>80</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="transparancyShape">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>219</y>
+      <width>44</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>set Shape Transparancy %</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
