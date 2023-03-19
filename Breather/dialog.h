@@ -44,8 +44,14 @@ public:
     quint16 getTimeMS(quint8 mode);
     QColor getColor(quint8 mode);
     QPointF getUserScaling(quint8 mode);
+    quint8 getShapeTransparency();
+    quint8 getWindowTransparency();
+
     void setUserScaling(quint8 mode, QPointF scaling);
     void setPosition(quint8 mode, quint8 position);
+    void setShapeTransparency(quint8 transparancy);
+    void setWindowTransparency(quint8 transparancy);
+
     void savePosition();
     void saveUserScaling();
 
@@ -58,6 +64,8 @@ private slots:
     void on_ColorSelected(QColor);
     void on_ColorSelectClicked(int);
     void on_SomethingToggled();
+    void on_ShapeTransparancyChanged(int transparancy);
+    void on_WindowTransparancyChanged(int transparancy);
 
 signals:
     void settingsChanged();

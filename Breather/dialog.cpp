@@ -16,6 +16,7 @@ struct DialogData
     QHash<quint8, QDoubleSpinBox *> mapTime;
     QHash<quint8, QPushButton *>    mapColor;
     QHash<quint16, QSpinBox *>      mapSize;
+
     // Above hashes will contain pointers to the specific Buttons identified
     // by the keys which will consist of unique combination of modes and above details
     // This is done so that the GUI items can be referred to by their modes and details
@@ -27,6 +28,8 @@ struct DialogData
     QSignalMapper *mapper;
     quint8 currColorToSet = 0;
     QHash<quint8,QPointF> userScaling;
+    quint8 transparancyShape;
+    quint8 transparancyWindow;
 
     QHash<quint8,quint8>  stateDirection;
     QHash<quint8,quint8>  stateShape;
@@ -86,6 +89,8 @@ Dialog::Dialog(QWidget *parent) :
     for (QSpinBox * instance : dptr->mapSize.values())
         connect(instance,SIGNAL(valueChanged(int)),this,SLOT(on_SomethingToggled()));
 
+    connect(ui->transparancyShape,SIGNAL(valueChanged(int)),this,SLOT(on_ShapeTransparancyChanged(int)));
+    connect(ui->transparancyWindow,SIGNAL(valueChanged(int)),this,SLOT(on_WindowTransparancyChanged(int)));
 }
 
 Dialog::~Dialog()
@@ -214,6 +219,14 @@ void Dialog::loadSavedSettings()
 //    dptr->userScaling[Modes::HoldOut] = (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1);
     setUserScaling(Modes::HoldOut, (point.length() == 2) ? QPointF(point.at(0).toFloat(), point.at(1).toFloat()) : QPointF(1,1));
     settings.endGroup();
+
+    settings.beginGroup("Global");
+    dptr->transparancyShape  = settings.value("transparancyShape" ,"50").toDouble()  ;
+    dptr->transparancyWindow = settings.value("transparancyWindow","50").toDouble() ;
+    setShapeTransparency(dptr->transparancyShape);
+    setWindowTransparency(dptr->transparancyWindow);
+    settings.endGroup();
+
     qInfo() << Q_FUNC_INFO << settings.value("scalingHoldIn","1,1").toString()
             << settings.value("scalingHoldOut","1,1").toString() << point
              << dptr->userScaling[Modes::HoldIn] << dptr->userScaling[Modes::HoldOut];
@@ -269,6 +282,11 @@ void Dialog::saveSettings()
     settings.setValue("colorHoldOut",getColor(Modes::HoldOut).name());
     settings.setValue("scalingHoldIn",QString::number(getUserScaling(Modes::HoldIn).x())+","+QString::number(getUserScaling(Modes::HoldIn).y()));
     settings.setValue("scalingHoldOut",QString::number(getUserScaling(Modes::HoldOut).x())+","+QString::number(getUserScaling(Modes::HoldOut).y()));
+    settings.endGroup();
+
+    settings.beginGroup("Global");
+    settings.setValue("transparancyShape", ui->transparancyShape->value()) ;
+    settings.setValue("transparancyWindow", ui->transparancyWindow->value()) ;
     settings.endGroup();
 
     dptr->stateDirection[Modes::Inhale] = getDirection(Modes::Inhale);
@@ -337,6 +355,26 @@ quint16 Dialog::getTimeMS(quint8 mode)
 QColor Dialog::getColor(quint8 mode)
 {
     return dptr->colorMap[mode];
+}
+
+quint8 Dialog::getShapeTransparency()
+{
+     return ui->transparancyShape->value();
+}
+
+void Dialog::setShapeTransparency(quint8 transparancy)
+{
+     ui->transparancyShape->setValue(transparancy);
+}
+
+quint8 Dialog::getWindowTransparency()
+{
+     return ui->transparancyWindow->value();
+}
+
+void Dialog::setWindowTransparency(quint8 transparancy)
+{
+     ui->transparancyWindow->setValue(transparancy);
 }
 
 void Dialog::setUserScaling(quint8 mode, QPointF scaling)
@@ -421,6 +459,16 @@ void Dialog::on_ColorSelected(quint8 mode, QColor color)
     on_SomethingToggled();
 }
 
+void Dialog::on_ShapeTransparancyChanged(int transparancy)
+{
+    on_SomethingToggled();
+}
+
+void Dialog::on_WindowTransparancyChanged(int transparancy)
+{
+    on_SomethingToggled();
+}
+
 void Dialog::on_ColorSelectClicked(int mode)
 {
     dptr->currColorToSet = mode;
@@ -463,6 +511,10 @@ void Dialog::revertSettings()
 
     setUserScaling(Modes::Inhale,dptr->stateSize[Modes::Inhale]);
     setUserScaling(Modes::HoldIn,dptr->stateSize[Modes::HoldIn]);
+
+    setShapeTransparency(dptr->transparancyShape);
+    setWindowTransparency(dptr->transparancyWindow);
+
 }
 
 void Dialog::on_ResetClicked()
@@ -481,6 +533,9 @@ void Dialog::on_ResetClicked()
     dptr->mapTime.value(Modes::Exhale)->setValue(3);
     dptr->mapTime.value(Modes::HoldIn)->setValue(1.5);
     dptr->mapTime.value(Modes::HoldOut)->setValue(1.5);
+
+    setShapeTransparency(50);
+    setWindowTransparency(50);
 }
 
 void Dialog::on_DiscardClicked()

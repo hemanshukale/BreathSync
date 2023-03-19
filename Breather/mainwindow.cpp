@@ -348,6 +348,13 @@ void MainWindow::updateSettings()
     dptr->modeList[Modes::HoldIn]->setUserScaling(dptr->dialog->getUserScaling(Modes::HoldIn));
     dptr->modeList[Modes::HoldOut]->setUserScaling(dptr->dialog->getUserScaling(Modes::HoldOut));
 
+    dptr->modeList[Modes::Inhale]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
+    dptr->modeList[Modes::Exhale]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
+    dptr->modeList[Modes::HoldIn]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
+    dptr->modeList[Modes::HoldOut]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
+
+    this->setWindowOpacity(1- ((float)dptr->dialog->getWindowTransparency()/100) );
+
     qInfo() << Q_FUNC_INFO
             << dptr->modeList[Modes::Inhale]->getUserScaling()
             << dptr->modeList[Modes::Exhale]->getUserScaling()
