@@ -8,6 +8,8 @@
 #include <QMetaEnum>
 #include <QDir>
 
+#include "defaults.h"
+
 /*!
  * \brief The DialogData struct.
  */
@@ -196,8 +198,8 @@ void Dialog::loadSavedSettings()
     setRadioButton(dptr->mapPosition[Modes::Inhale << 8 | settings.value("Position",Position::TopLeft).toInt()]);
     setRadioButton(dptr->mapShape[Modes::Inhale << 8 | settings.value("Shape",Shape::Ellipse).toInt()]);
     setRadioButton(dptr->mapDirection[Modes::Inhale << 8 | settings.value("Direction",Direction::Horizontal).toInt()]);
-    dptr->mapTime.value(Modes::Inhale)->setValue(settings.value("timeInh", 0).toFloat()/1000);
-    dptr->mapTime.value(Modes::Exhale)->setValue(settings.value("timeExh", 0).toFloat()/1000);
+    dptr->mapTime.value(Modes::Inhale)->setValue(settings.value("timeInh", 0).toFloat() * MSEC_TO_SEC);
+    dptr->mapTime.value(Modes::Exhale)->setValue(settings.value("timeExh", 0).toFloat() * MSEC_TO_SEC);
     on_ColorSelected(Modes::Inhale, QColor(settings.value("colorInh", "#ff00ff").toString()));
     on_ColorSelected(Modes::Exhale, QColor(settings.value("colorExh", "#ffff00").toString()));
     QStringList point = settings.value("scalingInh","1,1").toString().split(",");
@@ -216,8 +218,8 @@ void Dialog::loadSavedSettings()
     setRadioButton(dptr->mapPosition[Modes::HoldIn << 8 | settings.value("Position",Position::TopLeft).toInt()]);
     setRadioButton(dptr->mapShape[Modes::HoldIn << 8 | settings.value("Shape",Shape::Ellipse).toInt()]);
     setRadioButton(dptr->mapDirection[Modes::HoldIn << 8 | settings.value("Direction",Direction::Vertical).toInt()]);
-    dptr->mapTime.value(Modes::HoldIn)->setValue(settings.value("timeHoldIn", 0).toFloat()/1000);
-    dptr->mapTime.value(Modes::HoldOut)->setValue(settings.value("timeHoldOut", 0).toFloat()/1000);
+    dptr->mapTime.value(Modes::HoldIn)->setValue(settings.value("timeHoldIn", 0).toFloat()* MSEC_TO_SEC);
+    dptr->mapTime.value(Modes::HoldOut)->setValue(settings.value("timeHoldOut", 0).toFloat()* MSEC_TO_SEC);
 
     on_ColorSelected(Modes::HoldIn, QColor(settings.value("colorHoldIn", "#00ffff").toString()));
     on_ColorSelected(Modes::HoldOut, QColor(settings.value("colorHoldOut", "#00ff00").toString()));
@@ -382,7 +384,7 @@ quint8 Dialog::getDirection(quint8 mode)
 quint16 Dialog::getTimeMS(quint8 mode)
 {
     if (dptr->mapTime.contains(mode))
-        return (quint16)(dptr->mapTime.value(mode)->value()*1000);
+        return (quint16)(dptr->mapTime.value(mode)->value()*SEC_TO_MSEC);
     return 0;
 }
 
@@ -442,8 +444,8 @@ void Dialog::setUserScaling(quint8 mode, QPointF scaling)
     dptr->userScaling[mode] = scaling;
     if (mode == Modes::Exhale)  mode = Modes::Inhale;
     if (mode == Modes::HoldOut) mode = Modes::HoldIn;
-    dptr->mapSize.value(mode << 8 | Direction::Horizontal)->setValue(scaling.x()*1000);
-    dptr->mapSize.value(mode << 8 | Direction::Vertical)->setValue(scaling.y()*1000);
+    dptr->mapSize.value(mode << 8 | Direction::Horizontal)->setValue(scaling.x()*PERCENT_MULT);
+    dptr->mapSize.value(mode << 8 | Direction::Vertical)->setValue(scaling.y()*PERCENT_MULT);
 }
 
 /*!
@@ -502,8 +504,8 @@ QPointF Dialog::getUserScaling(quint8 mode)
     if (mode == Modes::HoldOut) mode = Modes::HoldIn;
 
     QPointF scale ;
-    scale.setX(((float)(dptr->mapSize.value(mode << 8 | Direction::Horizontal)->value()))/1000);
-    scale.setY(((float)(dptr->mapSize.value(mode << 8 | Direction::Vertical)->value()))/1000);
+    scale.setX(((float)(dptr->mapSize.value(mode << 8 | Direction::Horizontal)->value())) * PERCENT_INV_MULT);
+    scale.setY(((float)(dptr->mapSize.value(mode << 8 | Direction::Vertical)->value())) * PERCENT_INV_MULT);
     dptr->userScaling[mode] = scale;
     qInfo() << Q_FUNC_INFO << dptr->userScaling[mode];
     return dptr->userScaling[mode];
@@ -609,11 +611,11 @@ void Dialog::revertSettings()
     on_ColorSelected(Modes::HoldOut, QColor(dptr->stateColor[Modes::HoldOut]));
 
 
-    dptr->mapTime.value(Modes::Inhale)->setValue(((float)dptr->stateTime[Modes::Inhale])/1000);
-    dptr->mapTime.value(Modes::Exhale)->setValue(((float)dptr->stateTime[Modes::Exhale])/1000);
+    dptr->mapTime.value(Modes::Inhale)->setValue(((float)dptr->stateTime[Modes::Inhale])*SEC_TO_MSEC);
+    dptr->mapTime.value(Modes::Exhale)->setValue(((float)dptr->stateTime[Modes::Exhale])*SEC_TO_MSEC);
 
-    dptr->mapTime.value(Modes::HoldIn)->setValue(((float)dptr->stateTime[Modes::HoldIn])/1000);
-    dptr->mapTime.value(Modes::HoldOut)->setValue(((float)dptr->stateTime[Modes::HoldOut])/1000);
+    dptr->mapTime.value(Modes::HoldIn)->setValue(((float)dptr->stateTime[Modes::HoldIn])*SEC_TO_MSEC);
+    dptr->mapTime.value(Modes::HoldOut)->setValue(((float)dptr->stateTime[Modes::HoldOut])*SEC_TO_MSEC);
 
 
     setUserScaling(Modes::Inhale,dptr->stateSize[Modes::Inhale]);
@@ -639,10 +641,10 @@ void Dialog::on_ResetClicked()
     setRadioButton(dptr->mapDirection[Modes::Inhale << 8 | Direction::Vertical ]);
     setRadioButton(dptr->mapDirection[Modes::HoldIn << 8 | Direction::Horizontal]);
 
-    dptr->mapTime.value(Modes::Inhale)->setValue(3);
-    dptr->mapTime.value(Modes::Exhale)->setValue(3);
-    dptr->mapTime.value(Modes::HoldIn)->setValue(1.5);
-    dptr->mapTime.value(Modes::HoldOut)->setValue(1.5);
+    dptr->mapTime.value(Modes::Inhale)->setValue(DEF_INHALE_TIME);
+    dptr->mapTime.value(Modes::Exhale)->setValue(DEF_INHALE_TIME);
+    dptr->mapTime.value(Modes::HoldIn)->setValue(DEF_HOLD_TIME);
+    dptr->mapTime.value(Modes::HoldOut)->setValue(DEF_HOLD_TIME);
 
     setShapeTransparency(50);
     setWindowTransparency(50);

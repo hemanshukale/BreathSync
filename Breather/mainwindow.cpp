@@ -9,6 +9,7 @@
 #include <QMap>
 #include <QString>
 #include "dialog.h"
+#include "defaults.h"
 
 /*!
  * \brief The MainData struct
@@ -43,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     dptr=new MainData;
     qDebug() << Q_FUNC_INFO << "1";
     ui->setupUi(this);
-    startTimer((int)(1000/dptr->freq));    
+    startTimer((int)(SEC_TO_MSEC/dptr->freq));
     dptr->dialog = new Dialog(this);
     this->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::BypassWindowManagerHint);
     this->setAttribute(Qt::WA_TranslucentBackground);
@@ -443,7 +444,7 @@ void MainWindow::updateSettings()
     dptr->modeList[Modes::HoldIn]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
     dptr->modeList[Modes::HoldOut]->setTransparency(255-dptr->dialog->getShapeTransparency()*2.55 );
 
-    this->setWindowOpacity(1- ((float)dptr->dialog->getWindowTransparency()/100) );
+    this->setWindowOpacity(1- ((float)dptr->dialog->getWindowTransparency()* PERCENT_INV_MULT) );
 
     qInfo() << Q_FUNC_INFO
             << dptr->modeList[Modes::Inhale]->getUserScaling()
