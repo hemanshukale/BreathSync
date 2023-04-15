@@ -8,38 +8,39 @@
 #include <QMetaEnum>
 #include <QDir>
 
+/*!
+ * \brief The DialogData struct.
+ */
 struct DialogData
 {
-    QHash<quint16,QRadioButton *>   mapPosition ;
-    QHash<quint16,QRadioButton *>   mapShape ;
-    QHash<quint16,QRadioButton *>   mapDirection ;
-    QHash<quint8, QDoubleSpinBox *> mapTime;
-    QHash<quint8, QPushButton *>    mapColor;
-    QHash<quint16, QSpinBox *>      mapSize;
+    QHash<quint16,QRadioButton *>   mapPosition ;  ///< Map Mode and Position to Position Radio Button
+    QHash<quint16,QRadioButton *>   mapShape ;     ///< Map Mode and Shape to Shape Radio Button
+    QHash<quint16,QRadioButton *>   mapDirection ; ///< Map Mode and Direction to Direction Radio Button
+    QHash<quint8, QDoubleSpinBox *> mapTime;       ///< Map Mode to Time Input
+    QHash<quint8, QPushButton *>    mapColor;      ///< Map Mode to Color Radio Button
+    QHash<quint16, QSpinBox *>      mapSize;       ///< Map Mode to Size Input
 
-    // Above hashes will contain pointers to the specific Buttons identified
-    // by the keys which will consist of unique combination of modes and above details
-    // This is done so that the GUI items can be referred to by their modes and details
-    // instead of referring them by the variable name for better scalability
-    // we refer by enums to decrease hardcoding and increase scalability
+    QHash<quint8,QColor> colorMap; ///< Maps Mode to Color values
+    QColorDialog *colord;      ///< Pointer to Select Color Dialog Box
+    QSignalMapper *mapper;     ///< Pointer to signal mapper class used to set SIGNAL-SLOT mapping to better handle color selection
+    quint8 currColorToSet = 0; ///< Stores Mode enum where to store the selected Color
+    QHash<quint8,QPointF> userScaling; ///< Map Mode to user set scaling values
+    quint8 transparancyShape;  ///< Shape transparancy value
+    quint8 transparancyWindow; ///< Window transparancy value
 
-    QHash<quint8,QColor> colorMap;
-    QColorDialog *colord;
-    QSignalMapper *mapper;
-    quint8 currColorToSet = 0;
-    QHash<quint8,QPointF> userScaling;
-    quint8 transparancyShape;
-    quint8 transparancyWindow;
-
-    QHash<quint8,quint8>  stateDirection;
-    QHash<quint8,quint8>  stateShape;
-    QHash<quint8,quint8>  statePosition;
-    QHash<quint8,QColor>  stateColor;
-    QHash<quint8,quint16> stateTime;
-    QHash<quint8,QPointF> stateSize;
+    QHash<quint8,quint8>  stateDirection; ///< Store the last saved direction of a mode
+    QHash<quint8,quint8>  stateShape;     ///< Store the last saved shape of a mode
+    QHash<quint8,quint8>  statePosition;  ///< Store the last saved position of a mode
+    QHash<quint8,QColor>  stateColor;     ///< Store the last saved color of a mode
+    QHash<quint8,quint16> stateTime;      ///< Store the last saved time of a mode
+    QHash<quint8,QPointF> stateSize;      ///< Store the last saved size of a mode
 
 };
 
+/*!
+ * \brief Dialog::Dialog
+ * \param parent
+ */
 Dialog::Dialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dialog)
@@ -56,18 +57,6 @@ Dialog::Dialog(QWidget *parent) :
     dptr->colord->setOption(QColorDialog::DontUseNativeDialog);
     dptr->colord->setOption(QColorDialog::ShowAlphaChannel);
     dptr->mapper = new QSignalMapper(this);
-
-//    dptr->mapper->setMapping(dptr->mapColor[Modes::Inhale], (int)Modes::Inhale);
-//    connect(dptr->mapColor[Modes::Inhale],SIGNAL(released()),dptr->mapper,SLOT(map()));
-
-//    dptr->mapper->setMapping(dptr->mapColor[Modes::Exhale], (int)Modes::Exhale);
-//    connect(dptr->mapColor[Modes::Exhale],SIGNAL(released()),dptr->mapper,SLOT(map()));
-
-//    dptr->mapper->setMapping(dptr->mapColor[Modes::HoldIn], (int)Modes::HoldIn);
-//    connect(dptr->mapColor[Modes::HoldIn],SIGNAL(released()),dptr->mapper,SLOT(map()));
-
-//    dptr->mapper->setMapping(dptr->mapColor[Modes::HoldOut], (int)Modes::HoldOut);
-//    connect(dptr->mapColor[Modes::HoldOut],SIGNAL(released()),dptr->mapper,SLOT(map()));
 
     for (quint8 mode : dptr->mapColor.keys() )
     {
@@ -93,15 +82,23 @@ Dialog::Dialog(QWidget *parent) :
     connect(ui->transparancyWindow,SIGNAL(valueChanged(int)),this,SLOT(on_WindowTransparancyChanged(int)));
 }
 
+/*!
+ * \brief Dialog::~Dialog
+ */
 Dialog::~Dialog()
 {
     delete ui;
 }
 
+/*!
+ * \brief Dialog::setHashMapping Set the Hash mapping with the ui objects
+ *  Once you set the Hash mapping with the ui objects, you don't need refer to them by their ui name
+ *  and can refer by the enums - to prevent hardcoding and for better scalability
+ *  You can also loop the iterate this hash map if need to do a change throught instead of calling each ui object individually
+ */
 void Dialog::setHashMapping()
 {
-    // Here once you set the Hash mapping with the ui objects, you never refer to them by their ui name
-    // and always refer by the enums
+    // Here we are using bitmasking and storing the mode in second byte and position in first byte
     dptr->mapPosition[Modes::Inhale << 8 | Position::TopLeft]     = ui->InhtopLeft;
     dptr->mapPosition[Modes::Inhale << 8 | Position::Top]         = ui->InhtopCentre;
     dptr->mapPosition[Modes::Inhale << 8 | Position::TopRight]    = ui->InhtopRight;
@@ -140,6 +137,7 @@ void Dialog::setHashMapping()
     dptr->mapDirection[Modes::HoldIn << 8 | Direction::Vertical]   = ui->HoldOnlyVertical;
     dptr->mapDirection[Modes::HoldIn << 8 | Direction::Both]       = ui->HoldBothChangable;
 
+    // Here we are storing the mode in first byte
     dptr->mapTime[Modes::Inhale]  = ui->timeInhale;
     dptr->mapTime[Modes::Exhale]  = ui->timeExhale;
     dptr->mapTime[Modes::HoldIn]  = ui->timeHoldIn;
@@ -157,7 +155,10 @@ void Dialog::setHashMapping()
 
 }
 
-
+/*!
+ * \brief Dialog::setRadioButton Set the parametered radio button as True
+ * \param instance QRadioButton
+ */
 void Dialog::setRadioButton(QRadioButton *instance)
 {
     if (!instance) return ;
@@ -168,6 +169,11 @@ void Dialog::setRadioButton(QRadioButton *instance)
     #endif
 }
 
+/*!
+ * \brief Dialog::getRadioButtonState Get the current state of the radio button
+ * \param instance QRadioButton
+ * \return
+ */
 bool Dialog::getRadioButtonState(QRadioButton *instance) const
 {
     if (!instance) return false;
@@ -178,6 +184,9 @@ bool Dialog::getRadioButtonState(QRadioButton *instance) const
     #endif
 }
 
+/*!
+ * \brief Dialog::loadSavedSettings Load all saved settings from the config file
+ */
 void Dialog::loadSavedSettings()
 {
     qInfo() << Q_FUNC_INFO;
@@ -255,6 +264,9 @@ void Dialog::loadSavedSettings()
 
 }
 
+/*!
+ * \brief Dialog::saveSettings Save settings in the config file
+ */
 void Dialog::saveSettings()
 {
     qInfo() << Q_FUNC_INFO;
@@ -313,6 +325,11 @@ void Dialog::saveSettings()
 
 }
 
+/*!
+ * \brief Dialog::getPosition Get position of the parametered mode from UI
+ * \param mode
+ * \return
+ */
 quint8 Dialog::getPosition(quint8 mode)
 {
     if (mode == Modes::Exhale) mode = Modes::Inhale;
@@ -324,6 +341,12 @@ quint8 Dialog::getPosition(quint8 mode)
 
     return 0;
 }
+
+/*!
+ * \brief Dialog::getShape Get shape of the parametered mode from UI
+ * \param mode
+ * \return
+ */
 quint8 Dialog::getShape(quint8 mode)
 {
     if (mode == Modes::Exhale) mode = Modes::Inhale;
@@ -334,6 +357,12 @@ quint8 Dialog::getShape(quint8 mode)
             return (keys & 0xFF) ; // extract Shape byte from the key
     return 0;
 }
+
+/*!
+ * \brief Dialog::getDirection Get direction of the parametered mode from ui
+ * \param mode
+ * \return
+ */
 quint8 Dialog::getDirection(quint8 mode)
 {
     if (mode == Modes::Exhale) mode = Modes::Inhale;
@@ -345,6 +374,11 @@ quint8 Dialog::getDirection(quint8 mode)
     return 0;
 }
 
+/*!
+ * \brief Dialog::getTimeMS Get time (ms) to show of the parametered mode from UI
+ * \param mode
+ * \return
+ */
 quint16 Dialog::getTimeMS(quint8 mode)
 {
     if (dptr->mapTime.contains(mode))
@@ -352,31 +386,57 @@ quint16 Dialog::getTimeMS(quint8 mode)
     return 0;
 }
 
+/*!
+ * \brief Dialog::getColor Get color of the parametered mode
+ * \param mode
+ * \return
+ */
 QColor Dialog::getColor(quint8 mode)
 {
     return dptr->colorMap[mode];
 }
 
+/*!
+ * \brief Dialog::getShapeTransparency Get Shape transparancy from UI
+ * \return
+ */
 quint8 Dialog::getShapeTransparency()
 {
      return ui->transparancyShape->value();
 }
 
+/*!
+ * \brief Dialog::setShapeTransparency Set Shape transparancy value in UI
+ * \param transparancy
+ */
 void Dialog::setShapeTransparency(quint8 transparancy)
 {
      ui->transparancyShape->setValue(transparancy);
 }
 
+/*!
+ * \brief Dialog::getWindowTransparency Get Window transparancy from UI
+ * \return
+ */
 quint8 Dialog::getWindowTransparency()
 {
      return ui->transparancyWindow->value();
 }
 
+/*!
+ * \brief Dialog::setWindowTransparency Set Window transparancy value in UI
+ * \param transparancy
+ */
 void Dialog::setWindowTransparency(quint8 transparancy)
 {
      ui->transparancyWindow->setValue(transparancy);
 }
 
+/*!
+ * \brief Dialog::setUserScaling Set the scaling i.e. shape size multiplier selected by user in the UI
+ * \param mode
+ * \param scaling
+ */
 void Dialog::setUserScaling(quint8 mode, QPointF scaling)
 {
     dptr->userScaling[mode] = scaling;
@@ -386,6 +446,9 @@ void Dialog::setUserScaling(quint8 mode, QPointF scaling)
     dptr->mapSize.value(mode << 8 | Direction::Vertical)->setValue(scaling.y()*1000);
 }
 
+/*!
+ * \brief Dialog::saveUserScaling Save the scaling i.e. shape size multiplier selected by user
+ */
 void Dialog::saveUserScaling()
 {
     QSettings settings(QString(qApp->applicationName()));
@@ -401,11 +464,19 @@ void Dialog::saveUserScaling()
     settings.endGroup();
 }
 
+/*!
+ * \brief Dialog::setPosition Set the radio button for the parametered mode in the UI
+ * \param mode
+ * \param position
+ */
 void Dialog::setPosition(quint8 mode, quint8 position)
 {
     setRadioButton(dptr->mapPosition[mode << 8 | position]);
 }
 
+/*!
+ * \brief Dialog::savePosition Save the position of shapes in the config file
+ */
 void Dialog::savePosition()
 {
     qInfo() << Q_FUNC_INFO ;
@@ -420,6 +491,11 @@ void Dialog::savePosition()
     settings.endGroup();
 }
 
+/*!
+ * \brief Dialog::getUserScaling Get user set scalin values from the UI
+ * \param mode
+ * \return
+ */
 QPointF Dialog::getUserScaling(quint8 mode)
 {
     if (mode == Modes::Exhale)  mode = Modes::Inhale;
@@ -433,6 +509,10 @@ QPointF Dialog::getUserScaling(quint8 mode)
     return dptr->userScaling[mode];
 }
 
+/*!
+ * \brief Dialog::on_ColorSelected Unused Alternate method to set color for a mode
+ * \param mode
+ */
 void Dialog::on_ColorSelected(int mode)
 {
     dptr->colorMap[mode] = dptr->colord->selectedColor();
@@ -444,6 +524,10 @@ void Dialog::on_ColorSelected(int mode)
     dptr->mapper->removeMappings(dptr->colord);
 }
 
+/*!
+ * \brief Dialog::on_ColorSelected SLOT triggers when color selected
+ * \param color
+ */
 void Dialog::on_ColorSelected(QColor color)
 {
 
@@ -451,6 +535,11 @@ void Dialog::on_ColorSelected(QColor color)
     this->show();
 }
 
+/*!
+ * \brief Dialog::on_ColorSelected Sets the color for the mode
+ * \param mode
+ * \param color
+ */
 void Dialog::on_ColorSelected(quint8 mode, QColor color)
 {
     dptr->colorMap[mode] = color;
@@ -459,16 +548,28 @@ void Dialog::on_ColorSelected(quint8 mode, QColor color)
     on_SomethingToggled();
 }
 
+/*!
+ * \brief Dialog::on_ShapeTransparancyChanged
+ * \param transparancy
+ */
 void Dialog::on_ShapeTransparancyChanged(int transparancy)
 {
     on_SomethingToggled();
 }
 
+/*!
+ * \brief Dialog::on_WindowTransparancyChanged
+ * \param transparancy
+ */
 void Dialog::on_WindowTransparancyChanged(int transparancy)
 {
     on_SomethingToggled();
 }
 
+/*!
+ * \brief Dialog::on_ColorSelectClicked SLOT triggers User clicks on select color; Opens a dialog box to select it and saves the mode for which it was clicked
+ * \param mode
+ */
 void Dialog::on_ColorSelectClicked(int mode)
 {
     dptr->currColorToSet = mode;
@@ -476,6 +577,9 @@ void Dialog::on_ColorSelectClicked(int mode)
     dptr->colord->open();
 }
 
+/*!
+ * \brief Dialog::on_ColorInhaleClicked Unused Alternate method to set color for a mode
+ */
 void Dialog::on_ColorInhaleClicked()
 {
     dptr->mapper->setMapping(dptr->colord, (int)Modes::Inhale);
@@ -484,6 +588,9 @@ void Dialog::on_ColorInhaleClicked()
     dptr->colord->open();
 }
 
+/*!
+ * \brief Dialog::revertSettings When discard is pressed, revert all the settings to last saved ones
+ */
 void Dialog::revertSettings()
 {
     setRadioButton(dptr->mapPosition[Modes::Inhale << 8  | dptr->statePosition[Modes::Inhale]]);
@@ -517,6 +624,9 @@ void Dialog::revertSettings()
 
 }
 
+/*!
+ * \brief Dialog::on_ResetClicked SLOT fired when Reset clicked
+ */
 void Dialog::on_ResetClicked()
 {
     qInfo() << Q_FUNC_INFO;
@@ -538,6 +648,9 @@ void Dialog::on_ResetClicked()
     setWindowTransparency(50);
 }
 
+/*!
+ * \brief Dialog::on_DiscardClicked SLOT fired when Discard clicked
+ */
 void Dialog::on_DiscardClicked()
 {
     qInfo() << Q_FUNC_INFO;
@@ -547,11 +660,17 @@ void Dialog::on_DiscardClicked()
     emit settingsClosed();
 }
 
+/*!
+ * \brief Dialog::on_SomethingToggled SLOT fired when any setting is changed so that MainWindow should know to update
+ */
 void Dialog::on_SomethingToggled()
 {
     emit settingsChanged();
 }
 
+/*!
+ * \brief Dialog::on_SaveClicked SLOT fired when Save clicked
+ */
 void Dialog::on_SaveClicked()
 {
     qInfo() << Q_FUNC_INFO;

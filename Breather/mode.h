@@ -89,12 +89,11 @@ public:
     QPoint  getShapeDimensions(const quint32 &elapsedTimeMS);
     QPoint  getScreenCentre();
     QPointF getUserScaling();
-    int     getTimeElapsed();
 
 
 private:
     ModeData *d;
-    Mode* next;
+    Mode* next; ///< Pointer to the next mode - basically circular linked list
     static QPoint screenSize;
 };
 

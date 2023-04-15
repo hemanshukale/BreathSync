@@ -41,7 +41,6 @@ private:
     void timerEvent(QTimerEvent *event);
 
     void setFocusedModesScaling(qint8 scrollX, qint8 scollY);
-    void getUserScaling();
 
 
     QSize sizeHint() const;

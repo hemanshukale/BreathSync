@@ -10,28 +10,36 @@
 #include <QString>
 #include "dialog.h"
 
+/*!
+ * \brief The MainData struct
+ */
 struct MainData
 {
-    Mode *currMode ;
-    QTime *modeTimer;
-    QTimer *timeKeeper;
-    QHash<quint8,Mode*> modeList;
-    quint8 currModeEnum;
-    quint8 shapeOpacity = 127;
-    quint8 freq = 30;
-    bool showTitleBar = false;
-    QPoint oldPos = QPoint(0,0);
-    QPoint ellipse_size = QPoint(300,300);
-    QPoint windowSize= QPoint(300,300);
-    Mode *lastMode = NULL;
-    quint8 currFocus = 0;
-    Dialog *dialog;
+    Mode *currMode ; ///< Pointer to the active Mode
+    QTime *modeTimer; ///< Maintains the time elapsed in the current mode
+    QTimer *timeKeeper; ///< Timer firing interrupt when the time set for the mode is elapsed
+    QHash<quint8,Mode*> modeList; ///< Maintain the list of pointers to modes
+    quint8 currModeEnum; ///< Keeps the mode number (enum) of the active mode
+    quint8 shapeOpacity = 127; ///< Default shape opacity to start with
+    quint8 freq = 30; ///< Sets the shape update fps
+    bool showTitleBar = false; ///< To show the title bar : toggled by double click
+    QPoint oldPos = QPoint(0,0); ///< Keeps the position for calculation
+    QPoint ellipse_size = QPoint(300,300); ///< Stores the size of ellipse
+    QPoint windowSize= QPoint(300,300); ///< Stores the size of window
+    Mode *lastMode = NULL; ///< Stores the mode which was active before the current one
+    quint8 currFocus = 0; ///< Stores which mode is in focus currently
+    Dialog *dialog; ///< Pointer to the dialog class
 };
 
+/*!
+ * \brief MainWindow::MainWindow Constructor
+ * \param parent
+ */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    // Setting up UI
     dptr=new MainData;
     qDebug() << Q_FUNC_INFO << "1";
     ui->setupUi(this);
@@ -43,6 +51,8 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowOpacity(0.7);
     this->setAttribute(Qt::WA_NoSystemBackground);
     qDebug() << Q_FUNC_INFO << "2";
+
+    // Initiating and adding modes to the Mode list
     dptr->modeList[Modes::Inhale]  = new Mode(Modes::Inhale, dptr->shapeOpacity);
     dptr->modeList[Modes::HoldIn]  = new Mode(Modes::HoldIn, dptr->shapeOpacity);
     dptr->modeList[Modes::Exhale]  = new Mode(Modes::Exhale, dptr->shapeOpacity);
@@ -58,9 +68,11 @@ MainWindow::MainWindow(QWidget *parent)
     dptr->modeList[Modes::Exhale]->setChangable(Changable::Decreasing);
     dptr->modeList[Modes::HoldOut]->setChangable(Changable::Decreasing);
 
+    // update settings based on stored settings
     updateSettings();
     qDebug() << Q_FUNC_INFO << "3";
 
+    // Start with the first mode -> Inhale in this case
     dptr->currModeEnum = Modes::Inhale;
     dptr->currMode = dptr->modeList[dptr->currModeEnum];
     dptr->timeKeeper = new QTimer;
@@ -69,17 +81,25 @@ MainWindow::MainWindow(QWidget *parent)
 //    QTimer::singleShot(currMode->getTimeMS(),this,SLOT(onModeTimeout()));
     dptr->timeKeeper->singleShot(dptr->currMode->getTimeMS(),this,SLOT(onModeTimeout()));
     dptr->modeTimer->start();
+
+    // Update Window settings
     this->resize(300,300);
     QSize sz = this->window()->size();
     dptr->windowSize = QPoint(sz.width(),sz.height());
     Mode::setScreenSize(dptr->windowSize);
 
+    // Set SIGNAL-SLOT mapping
     connect(dptr->dialog,SIGNAL(settingsClosed()),this,SLOT(showWindow()) );
     connect(dptr->dialog,SIGNAL(settingsChanged()),this,SLOT(updateSettings()) );
 
     qInfo() << Q_FUNC_INFO << dptr->windowSize;
 }
 
+
+/*!
+ * \brief MainWindow::onModeTimeout
+ * Called when QTimer timeKeeper times out
+ */
 void MainWindow::onModeTimeout()
 {
 //    qDebug() << Q_FUNC_INFO << "Curr Mode=" << dptr->currMode->getMode() << dptr->currMode->getTimeMS();
@@ -91,11 +111,22 @@ void MainWindow::onModeTimeout()
 //    qDebug() << Q_FUNC_INFO << "New  Mode=" << dptr->currMode->getMode() << dptr->currMode->getTimeMS();
 }
 
+/*!
+ * \brief MainWindow::sizeHint
+ * \return
+ */
 QSize MainWindow::sizeHint() const
 {
     return QSize(dptr->windowSize.x(), dptr->windowSize.y()) ;// Set this to the exact image resolution
 }
 
+
+/*!
+ * \brief MainWindow::drawShape Draw shapes based on given input and shape set in current mode
+ * \param qp
+ * \param xywh
+ * \param shape
+ */
 void MainWindow::drawShape(QPainter &qp, QRect xywh, quint8 shape)
 {
 //    qInfo() << Q_FUNC_INFO << xywh << shape;
@@ -119,6 +150,13 @@ void MainWindow::drawShape(QPainter &qp, QRect xywh, quint8 shape)
     }
 }
 
+
+/*!
+ * \brief MainWindow::isModeInFocus Get the combo mode in focus since we are sharing shapes for two modes - ex. Inhale or Exhale mode will return Focus::InhaleExhale
+ * \param mode
+ * \param focus
+ * \return
+ */
 bool MainWindow::isModeInFocus(quint8 mode, quint8 focus)
 {
     if ( ((mode == Modes::Inhale || mode == Modes::Exhale ) && focus == Focus::InhaleExhale)
@@ -127,6 +165,9 @@ bool MainWindow::isModeInFocus(quint8 mode, quint8 focus)
     return false;
 }
 
+/*!
+ * \brief MainWindow::paintEvent Called when repaint or update is called
+ */
 void MainWindow::paintEvent(QPaintEvent *)
 {
     QPainter qp ;
@@ -137,6 +178,7 @@ void MainWindow::paintEvent(QPaintEvent *)
     //= timeKeeper->interval()-timeKeeper->remainingTime();
 //    qDebug() << Q_FUNC_INFO << "Time" << elapsedTime << dptr->currMode->getColor() << dptr->currMode->getShapeCoord(elapsedTime);
     QPen pen(Qt::NoPen);
+
     if (!(!dptr->lastMode))
     {
         if (isModeInFocus(dptr->lastMode->getMode(), dptr->currFocus))
@@ -146,6 +188,7 @@ void MainWindow::paintEvent(QPaintEvent *)
         drawShape(qp, dptr->lastMode->getEndShapeCoord(), dptr->lastMode->getShape());
     }
 
+    // If we are editing any mode using numpad or Ctrl+Scroll, this will draw an outline around it to show that this shape is being edited
     if (isModeInFocus(dptr->currMode->getMode(), dptr->currFocus))
         pen = QPen(Qt::gray, 3, Qt::DashDotLine);
     else pen = QPen(Qt::NoPen);
@@ -155,6 +198,10 @@ void MainWindow::paintEvent(QPaintEvent *)
     qp.end();
 }
 
+/*!
+ * \brief MainWindow::mouseMoveEvent Called when mouse move event is detected
+ * \param event
+ */
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
     QPoint delta = QPoint(event->globalPos() - dptr->oldPos);
@@ -162,6 +209,11 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     dptr->oldPos = event->globalPos();
 }
 
+
+/*!
+ * \brief MainWindow::mousePressEvent Called when mouse press event is detected
+ * \param event
+ */
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     dptr->oldPos = event->globalPos();
@@ -174,6 +226,8 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 //            this->hide();
             return;
         }
+        // If left double click detected, toggle the showing of title bar
+        // Also toggles showing the settings dialog box by middle click
         if (event->button() == Qt::LeftButton && event->type() ==  QEvent::MouseButtonDblClick)
         {
             dptr->showTitleBar = ! dptr->showTitleBar;
@@ -196,6 +250,10 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
     }
 }
 
+/*!
+ * \brief MainWindow::wheelEvent Called when mouse wheel event is detected
+ * \param event
+ */
 void MainWindow::wheelEvent(QWheelEvent *event)
 {
     qint8 scroll=0, scrollX=0, scrollY=0;
@@ -211,7 +269,11 @@ void MainWindow::wheelEvent(QWheelEvent *event)
     setFocusedModesScaling(scrollX, scrollY);
 }
 
-
+/*!
+ * \brief MainWindow::setFocusedModesScaling Set the scaling (sizes) of the shapes with Ctrl + Scroll
+ * \param scrollX
+ * \param scrollY
+ */
 void MainWindow::setFocusedModesScaling(qint8 scrollX, qint8 scrollY)
 {
     if (dptr->currFocus == Focus::NoFocus) return ;
@@ -227,20 +289,31 @@ void MainWindow::setFocusedModesScaling(qint8 scrollX, qint8 scrollY)
     }
 }
 
+/*!
+ * \brief MainWindow::showWindow
+ */
 void MainWindow::showWindow()
 {
     qInfo() << Q_FUNC_INFO;
     this->show();
 }
 
+/*!
+ * \brief MainWindow::resizeEvent This function is called when Window is resized
+ * \param event
+ */
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
+
     inherited::resizeEvent(event);
     QSize sz = this->window()->size();
     dptr->windowSize = QPoint(sz.width(),sz.height());
     Mode::setScreenSize(dptr->windowSize);
 }
 
+/*!
+ * \brief MainWindow::getNextFocus After Tab is pressed change focus to next mode
+ */
 void MainWindow::getNextFocus()
 {
     dptr->currFocus++;
@@ -275,6 +348,10 @@ void MainWindow::getNextFocus()
     }
 }
 
+/*!
+ * \brief MainWindow::setFocusedModesPosition Set the postition of the shape in focus based on input
+ * \param position
+ */
 void MainWindow::setFocusedModesPosition(quint8 position)
 {
     if (dptr->currFocus == Focus::NoFocus) return ;
@@ -293,6 +370,10 @@ void MainWindow::setFocusedModesPosition(quint8 position)
     }
 }
 
+/*!
+ * \brief MainWindow::keyPressEvent Called when KeyPress event is detected
+ * \param event
+ */
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
@@ -310,14 +391,23 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
+/*!
+ * \brief MainWindow::timerEvent
+ * \param event
+ */
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+    // refresh window
     this->repaint();
 }
 
 
+/*!
+ * \brief MainWindow::updateSettings Set all the mode parameters by getting the settings from Dialog class
+ */
 void MainWindow::updateSettings()
 {
+
     dptr->modeList[Modes::Inhale]->setShape(dptr->dialog->getShape(Modes::Inhale));
     dptr->modeList[Modes::Exhale]->setShape(dptr->dialog->getShape(Modes::Exhale));
     dptr->modeList[Modes::HoldIn]->setShape(dptr->dialog->getShape(Modes::HoldIn));
@@ -363,6 +453,9 @@ void MainWindow::updateSettings()
 
 }
 
+/*!
+ * \brief MainWindow::~MainWindow Destructor
+ */
 MainWindow::~MainWindow()
 {
     delete ui;
