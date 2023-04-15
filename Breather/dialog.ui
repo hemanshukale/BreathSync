@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>628</width>
+    <width>633</width>
     <height>472</height>
    </rect>
   </property>
@@ -21,7 +21,7 @@
     <rect>
      <x>0</x>
      <y>20</y>
-     <width>621</width>
+     <width>630</width>
      <height>451</height>
     </rect>
    </property>
@@ -826,7 +826,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Change Time</string>
+     <string>Change Time (s)</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_HoldHz">
@@ -834,12 +834,12 @@
      <rect>
       <x>214</x>
       <y>395</y>
-      <width>81</width>
+      <width>90</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Horizontal</string>
+     <string>Horizontal %</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_PosInExVert">
@@ -847,12 +847,12 @@
      <rect>
       <x>14</x>
       <y>365</y>
-      <width>71</width>
+      <width>80</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Vertical</string>
+     <string>Vertical %</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_PosInExHz">
@@ -860,12 +860,12 @@
      <rect>
       <x>14</x>
       <y>395</y>
-      <width>81</width>
+      <width>90</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Horizontal</string>
+     <string>Horizontal %</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_PosHoldVert">
@@ -873,12 +873,12 @@
      <rect>
       <x>214</x>
       <y>365</y>
-      <width>71</width>
+      <width>80</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Vertical</string>
+     <string>Vertical %</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="sizeInhVertical">
@@ -891,10 +891,10 @@
      </rect>
     </property>
     <property name="toolTip">
-     <string>Set Vertical Shape (0-1000)</string>
+     <string>Set Vertical Shape (0-100)</string>
     </property>
     <property name="maximum">
-     <number>1000</number>
+     <number>100</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="sizeInhHorizontal">
@@ -907,10 +907,10 @@
      </rect>
     </property>
     <property name="toolTip">
-     <string>Set Horizontal Shape (0-1000)</string>
+     <string>Set Horizontal Shape (0-100)</string>
     </property>
     <property name="maximum">
-     <number>1000</number>
+     <number>100</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="sizeHoldInHorizontal">
@@ -923,10 +923,10 @@
      </rect>
     </property>
     <property name="toolTip">
-     <string>Set Horizontal Shape (0-1000)</string>
+     <string>Set Horizontal Shape (0-100)</string>
     </property>
     <property name="maximum">
-     <number>1000</number>
+     <number>100</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="sizeHoldInVertical">
@@ -939,10 +939,10 @@
      </rect>
     </property>
     <property name="toolTip">
-     <string>Set Vertical Shape (0-1000)</string>
+     <string>Set Vertical Shape (0-100)</string>
     </property>
     <property name="maximum">
-     <number>1000</number>
+     <number>100</number>
     </property>
     <property name="singleStep">
      <number>1</number>
@@ -953,12 +953,12 @@
      <rect>
       <x>368</x>
       <y>220</y>
-      <width>151</width>
+      <width>160</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Shape Transparancy</string>
+     <string>Shape Transparancy %</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_SetTransparancyWindow">
@@ -966,12 +966,12 @@
      <rect>
       <x>370</x>
       <y>250</y>
-      <width>151</width>
+      <width>170</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Window Transparancy</string>
+     <string>Window Transparancy %</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="transparancyWindow">
