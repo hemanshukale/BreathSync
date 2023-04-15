@@ -22,12 +22,14 @@ SOURCES += \
     mode.cpp
 
 HEADERS += \
+    defaults.h \
     dialog.h \
     mainwindow.h \
     mode.h
 
 FORMS += \
-    dialog.ui
+    dialog.ui \
+    mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
