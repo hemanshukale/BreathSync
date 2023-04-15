@@ -1,0 +1,13 @@
+#ifndef DEFAULTS_H
+#define DEFAULTS_H
+
+#define DEF_INHALE_TIME 3
+#define DEF_HOLD_TIME 1.5
+
+#define PERCENT_MULT 100.0
+#define PERCENT_INV_MULT 1.0/100
+
+#define MSEC_TO_SEC 1.0/1000
+#define SEC_TO_MSEC 1000
+
+#endif // DEFAULTS_H
