@@ -1,6 +1,6 @@
 ## Note: currently only tried on Ubuntu, will check for windows later..
 
-# BreatheSync
+# BreathSync
 Sync your breaths with shapes in the app.
 
 As we are aware that deep breathing has many advantages, However we often forget to do this in daily life.
@@ -74,3 +74,8 @@ Below you can see the Exhale shape is minimum size now and Hold Out shape is dec
 
 The cyle will reset after the hold out shape becomes minimum in size - then you start breathing with the increasing inhale shape and so on..  
 
+
+# Walkthrough video
+
+Please find link to the walkthrough video to better help in understanding and how to use the app  
+[https://www.youtube.com/watch?v=G8UH4IZfviE](https://www.youtube.com/watch?v=G8UH4IZfviE)
