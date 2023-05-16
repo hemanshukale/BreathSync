@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['saveposition_0',['savePosition',['../classDialog.html#a819113dbbad61dfc688238e6594a2c37',1,'Dialog']]],
+  ['savesettings_1',['saveSettings',['../classDialog.html#a6fb9f8ea71d7928f350dea408c1535e9',1,'Dialog']]],
+  ['saveuserscaling_2',['saveUserScaling',['../classDialog.html#aa4fc86509b530bd393ab93d469d66505',1,'Dialog']]],
+  ['setchangable_3',['setChangable',['../classMode.html#af0da41bf1af9ad9997361ce4f55c5acb',1,'Mode']]],
+  ['setcolor_4',['setColor',['../classMode.html#a6642b4fa3ced0085b7a997fa1b201a0c',1,'Mode']]],
+  ['setdirection_5',['setDirection',['../classMode.html#a93127d72416485fb6f8a0eb202f4076c',1,'Mode']]],
+  ['setfocusedmodesposition_6',['setFocusedModesPosition',['../classMainWindow.html#a9546c092bb1f02c53575797d6b964069',1,'MainWindow']]],
+  ['setfocusedmodesscaling_7',['setFocusedModesScaling',['../classMainWindow.html#a2ba0c7ea0b94cfb98ad2e4cd5a5d5bc5',1,'MainWindow']]],
+  ['sethashmapping_8',['setHashMapping',['../classDialog.html#a752450c31d8f3166ca5bd43fd8a51a4e',1,'Dialog']]],
+  ['setmode_9',['setMode',['../classMode.html#ab9d37173d68370a7ab28bc5b7fbdafa6',1,'Mode']]],
+  ['setnext_10',['setNext',['../classMode.html#ac3f05b3ad242e1bf877d9efe491ef41f',1,'Mode']]],
+  ['setposition_11',['setPosition',['../classDialog.html#a35bed118d8a93fa2721ff2a1e035c953',1,'Dialog::setPosition()'],['../classMode.html#ab35e6a0ac1cd3dae38c75f31b16fce05',1,'Mode::setPosition()']]],
+  ['setradiobutton_12',['setRadioButton',['../classDialog.html#a63dd2b97ed436763b02a79a23aa124f6',1,'Dialog']]],
+  ['setscreensize_13',['setScreenSize',['../classMode.html#a5cbe609fc33e9569ec3d2a55f882f866',1,'Mode']]],
+  ['setscreenusage_14',['setScreenUsage',['../classMode.html#a0934e95f9cadb03c47c85298e308db50',1,'Mode']]],
+  ['setshape_15',['setShape',['../classMode.html#a7b21d995e07bcb1a9875ccceea724b06',1,'Mode']]],
+  ['setshapetransparency_16',['setShapeTransparency',['../classDialog.html#a409a0e801ac5e8ffc4d48b26ba9623a6',1,'Dialog']]],
+  ['settimems_17',['setTimeMS',['../classMode.html#a3adb050b7626e223b745148fa6a644cc',1,'Mode']]],
+  ['settransparency_18',['setTransparency',['../classMode.html#ac5206a7bbad91d5e84aed93ff7938f8d',1,'Mode']]],
+  ['setuserscaling_19',['setUserScaling',['../classDialog.html#ad59a7da226f8981e61fb5329f730125a',1,'Dialog::setUserScaling()'],['../classMode.html#a7e672f9fce1db16df8f3be11691c90ba',1,'Mode::setUserScaling(float scalingX, float scalingY)'],['../classMode.html#a8be636ad9e20cbd3b57d8d8936ba5997',1,'Mode::setUserScaling(const QPointF &amp;scaling)']]],
+  ['setwindowtransparency_20',['setWindowTransparency',['../classDialog.html#a6e731a3e46014374e053aad1c3279194',1,'Dialog']]],
+  ['showwindow_21',['showWindow',['../classMainWindow.html#a04d901dec193f723d5ab3c4a3231b6b8',1,'MainWindow']]],
+  ['sizehint_22',['sizeHint',['../classMainWindow.html#a19bdcc488dee2f68710c524544a666bf',1,'MainWindow']]]
+];
